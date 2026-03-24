@@ -66,8 +66,12 @@ def main() -> None:
     log.info("Fetching GitHub activity…")
     github_activity = fetch_github_activity(cfg, since=week_start, until=week_end)
 
-    log.info("Fetching Trello activity…")
-    trello_activity = fetch_trello_activity(cfg, since=week_start, until=week_end)
+    if cfg.trello_enabled:
+        log.info("Fetching Trello activity…")
+        trello_activity = fetch_trello_activity(cfg, since=week_start, until=week_end)
+    else:
+        log.info("TRELLO_API_KEY/TRELLO_TOKEN not set — skipping Trello.")
+        trello_activity = {}
 
     # ── 2. Build report model ──────────────────────────────────────────────────
     report = build_report(cfg, week_start, week_end, github_activity, trello_activity)

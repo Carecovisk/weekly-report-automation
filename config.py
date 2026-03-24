@@ -34,9 +34,9 @@ class Config:
         default_factory=lambda: set(_csv("GITHUB_IGNORE_LOGINS"))
     )
 
-    # Trello
-    trello_api_key: str = field(default_factory=lambda: _require("TRELLO_API_KEY"))
-    trello_token: str = field(default_factory=lambda: _require("TRELLO_TOKEN"))
+    # Trello (optional — Trello integration is skipped when credentials are absent)
+    trello_api_key: str = field(default_factory=lambda: os.getenv("TRELLO_API_KEY", ""))
+    trello_token: str = field(default_factory=lambda: os.getenv("TRELLO_TOKEN", ""))
     trello_board_ids: list[str] = field(
         default_factory=lambda: _csv("TRELLO_BOARD_IDS")
     )
@@ -71,6 +71,10 @@ class Config:
 
     # Optional Gemini API key for AI-generated summaries
     gemini_api_key: str = field(default_factory=lambda: os.getenv("GEMINI_API_KEY", ""))
+
+    @property
+    def trello_enabled(self) -> bool:
+        return bool(self.trello_api_key and self.trello_token)
 
     def display_name(self, login: str) -> str:
         return self.developer_name_map.get(login, login)
