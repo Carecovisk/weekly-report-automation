@@ -69,5 +69,8 @@ class Config:
         default_factory=lambda: json.loads(os.getenv("DEVELOPER_NAME_MAP", "{}"))
     )
 
+    # Optional Gemini API key for AI-generated summaries
+    gemini_api_key: str = field(default_factory=lambda: os.getenv("GEMINI_API_KEY", ""))
+
     def display_name(self, login: str) -> str:
         return self.developer_name_map.get(login, login)

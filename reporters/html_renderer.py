@@ -10,7 +10,7 @@ from jinja2 import Environment, BaseLoader
 from reporters.builder import WeeklyReport
 
 _TEMPLATE = """<!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -185,15 +185,15 @@ _TEMPLATE = """<!DOCTYPE html>
 
   <!-- Header -->
   <div class="report-header">
-    <h1>📊 Weekly Team Report</h1>
+    <h1>📊 Relatório Semanal da Equipe</h1>
     <div style="color:var(--muted)">
       <strong style="color:var(--text)">{{ report.org }}</strong> &nbsp;·&nbsp;
-      {{ report.week_start.strftime('%B %d') }} – {{ report.week_end.strftime('%B %d, %Y') }}
+      {{ report.week_start.strftime('%d/%m/%Y') }} – {{ report.week_end.strftime('%d/%m/%Y') }}
     </div>
     <div class="meta-grid">
       <div class="meta-card">
         <span class="num">{{ report.developers|length }}</span>
-        <span class="label">Active Devs</span>
+        <span class="label">Devs Ativos</span>
       </div>
       <div class="meta-card">
         <span class="num">{{ report.total_commits }}</span>
@@ -205,22 +205,22 @@ _TEMPLATE = """<!DOCTYPE html>
       </div>
       <div class="meta-card">
         <span class="num">{{ report.total_tasks }}</span>
-        <span class="label">Tasks Done</span>
+        <span class="label">Tarefas</span>
       </div>
     </div>
   </div>
 
   <!-- Summary Table -->
   <div class="section">
-    <h2>Summary</h2>
+    <h2>Resumo</h2>
     <table>
       <thead>
         <tr>
-          <th>Developer</th>
+          <th>Desenvolvedor</th>
           <th style="text-align:center">Commits</th>
           <th style="text-align:center">PRs</th>
-          <th style="text-align:center">Merged</th>
-          <th style="text-align:center">Tasks</th>
+          <th style="text-align:center">Mesclados</th>
+          <th style="text-align:center">Tarefas</th>
         </tr>
       </thead>
       <tbody>
@@ -239,7 +239,7 @@ _TEMPLATE = """<!DOCTYPE html>
 
   <!-- Developer Breakdown -->
   <div class="section">
-    <h2>Developer Breakdown</h2>
+    <h2>Detalhamento por Desenvolvedor</h2>
 
     {% for dev in report.developers %}
     <div class="dev-card">
@@ -251,14 +251,21 @@ _TEMPLATE = """<!DOCTYPE html>
         <div class="dev-stats">
           <span class="stat-pill"><span>{{ dev.commit_count }}</span> commits</span>
           <span class="stat-pill"><span>{{ dev.pr_count }}</span> PRs</span>
-          <span class="stat-pill"><span>{{ dev.task_count }}</span> tasks</span>
+          <span class="stat-pill"><span>{{ dev.task_count }}</span> tarefas</span>
         </div>
       </div>
       <div class="dev-body">
 
+        {% if dev.ai_summary %}
+        <div class="sub-section" style="background:rgba(108,142,245,.06);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1.2rem;">
+          <div class="sub-title" style="color:var(--accent)">✨ Resumo IA</div>
+          <p style="font-size:.9rem;line-height:1.6;white-space:pre-line">{{ dev.ai_summary }}</p>
+        </div>
+        {% endif %}
+
         {% if dev.repos_touched %}
         <div class="repos-touched">
-          Repos: {% for r in dev.repos_touched %}<code>{{ r }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+          Repositórios: {% for r in dev.repos_touched %}<code>{{ r }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
         </div>
         {% endif %}
 
@@ -271,7 +278,7 @@ _TEMPLATE = """<!DOCTYPE html>
             <div class="item-text">
               <a href="{{ c.url }}" target="_blank"><code>{{ c.sha }}</code></a>
               {{ c.message }}
-              <div class="item-meta"><code>{{ c.repo }}</code> · {{ c.authored_at.strftime('%b %d') }}</div>
+              <div class="item-meta"><code>{{ c.repo }}</code> · {{ c.authored_at.strftime('%d/%m') }}</div>
             </div>
           </div>
           {% endfor %}
@@ -288,8 +295,8 @@ _TEMPLATE = """<!DOCTYPE html>
             </span>
             <div class="item-text">
               <a href="{{ pr.url }}" target="_blank">#{{ pr.number }} {{ pr.title }}</a>
-              <span class="badge badge-{{ pr.state }}">{{ pr.state }}</span>
-              <div class="item-meta"><code>{{ pr.repo }}</code> · {{ pr.created_at.strftime('%b %d') }}</div>
+              <span class="badge badge-{{ pr.state }}">{% if pr.state == 'merged' %}mesclado{% elif pr.state == 'open' %}aberto{% else %}fechado{% endif %}</span>
+              <div class="item-meta"><code>{{ pr.repo }}</code> · {{ pr.created_at.strftime('%d/%m') }}</div>
             </div>
           </div>
           {% endfor %}
@@ -298,13 +305,13 @@ _TEMPLATE = """<!DOCTYPE html>
 
         {% if dev.trello_cards %}
         <div class="sub-section">
-          <div class="sub-title">Completed Tasks</div>
+          <div class="sub-title">Tarefas Concluídas</div>
           {% for card in dev.trello_cards|sort(attribute='last_activity', reverse=True) %}
           <div class="item">
             <span class="item-icon">✅</span>
             <div class="item-text">
               <a href="{{ card.url }}" target="_blank">{{ card.name }}</a>
-              <div class="item-meta">{{ card.board_name }} / {{ card.list_name }} · {{ card.last_activity.strftime('%b %d') }}</div>
+              <div class="item-meta">{{ card.board_name }} / {{ card.list_name }} · {{ card.last_activity.strftime('%d/%m') }}</div>
             </div>
           </div>
           {% endfor %}
@@ -316,7 +323,7 @@ _TEMPLATE = """<!DOCTYPE html>
     {% endfor %}
   </div>
 
-  <footer>Generated automatically · {{ report.week_range }}</footer>
+  <footer>Gerado automaticamente · {{ report.week_start.strftime('%d/%m/%Y') }} – {{ report.week_end.strftime('%d/%m/%Y') }}</footer>
 </div>
 </body>
 </html>"""

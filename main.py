@@ -18,6 +18,7 @@ from config import Config
 from fetchers.github_fetcher import fetch_github_activity
 from fetchers.trello_fetcher import fetch_trello_activity
 from reporters.builder import build_report
+from reporters.ai_summarizer import generate_summaries
 from reporters.html_renderer import render_html
 from reporters.markdown_renderer import render_markdown
 from uploaders.gmail import send_report_email
@@ -35,7 +36,7 @@ def _week_bounds(reference: datetime) -> tuple[datetime, datetime]:
     """Return Monday 00:00 UTC and Sunday 23:59:59 UTC for the week containing *reference*."""
     monday = reference - timedelta(days=reference.weekday())
     week_start = monday.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
-    week_end = week_start + timedelta(days=6, hours=23, minutes=59, seconds=59)
+    week_end = (week_start + timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(seconds=1)
     return week_start, week_end
 
 
@@ -81,6 +82,13 @@ def main() -> None:
     if not report.developers:
         log.warning("No activity found for this week — aborting.")
         sys.exit(0)
+
+    # ── 2b. Generate AI summaries ──────────────────────────────────────────────
+    if cfg.gemini_api_key:
+        log.info("Generating AI summaries via Gemini…")
+        generate_summaries(report, cfg.gemini_api_key)
+    else:
+        log.info("GEMINI_API_KEY not set — skipping AI summaries.")
 
     # ── 3. Render files ────────────────────────────────────────────────────────
     md_content = render_markdown(report)

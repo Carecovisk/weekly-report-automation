@@ -20,6 +20,7 @@ class DeveloperReport:
     commits: list[CommitInfo] = field(default_factory=list)
     pull_requests: list[PRInfo] = field(default_factory=list)
     trello_cards: list[TrelloCard] = field(default_factory=list)
+    ai_summary: str = ""                # Populated by ai_summarizer if Gemini is configured
 
     @property
     def has_activity(self) -> bool:
