@@ -58,6 +58,9 @@ class Config:
     # Email
     email_sender: str = field(default_factory=lambda: _require("EMAIL_SENDER"))
     email_recipient: str = field(default_factory=lambda: _require("EMAIL_RECIPIENT"))
+    email_app_password: str = field(default_factory=lambda: _require("EMAIL_APP_PASSWORD"))
+    email_smtp_host: str = field(default_factory=lambda: os.getenv("EMAIL_SMTP_HOST", "smtp.gmail.com"))
+    email_smtp_port: int = field(default_factory=lambda: int(os.getenv("EMAIL_SMTP_PORT", "587")))
     email_subject_template: str = field(
         default_factory=lambda: os.getenv(
             "EMAIL_SUBJECT_TEMPLATE", "Weekly Team Report – {week_range}"

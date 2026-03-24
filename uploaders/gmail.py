@@ -1,23 +1,19 @@
 """
 uploaders/gmail.py
 
-Sends the weekly report email via the Gmail API.
+Sends the weekly report email via SMTP with an app password.
 Attaches the Markdown file and embeds the HTML as the email body.
 """
 from __future__ import annotations
 
-import base64
 import logging
+import smtplib
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-
 from config import Config
-from uploaders.google_drive import _get_credentials  # shared OAuth flow
 
 log = logging.getLogger(__name__)
 
@@ -35,9 +31,6 @@ def send_report_email(
       - Markdown file attached
       - Optional Google Drive link appended to body
     """
-    creds: Credentials = _get_credentials(cfg)
-    service = build("gmail", "v1", credentials=creds)
-
     msg = MIMEMultipart("mixed")
     msg["From"] = cfg.email_sender
     msg["To"] = cfg.email_recipient
@@ -60,7 +53,11 @@ def send_report_email(
     attachment["Content-Disposition"] = f'attachment; filename="{markdown_path.name}"'
     msg.attach(attachment)
 
-    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-    service.users().messages().send(userId="me", body={"raw": raw}).execute()
+    # ── Send via SMTP ──────────────────────────────────────────────────────────
+    with smtplib.SMTP(cfg.email_smtp_host, cfg.email_smtp_port) as server:
+        server.ehlo()
+        server.starttls()
+        server.login(cfg.email_sender, cfg.email_app_password)
+        server.sendmail(cfg.email_sender, cfg.email_recipient, msg.as_bytes())
 
     log.info("Email sent to %s — subject: %s", cfg.email_recipient, subject)
