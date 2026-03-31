@@ -53,7 +53,7 @@ def main() -> None:
     args = parser.parse_args()
 
     reference = (
-        datetime.fromisoformat(args.date) if args.date else datetime.now(tz=timezone.utc)
+        datetime.fromisoformat(args.date) if args.date else datetime.now(tz=timezone.utc) - timedelta(days=3)
     )
     week_start, week_end = _week_bounds(reference)
 
@@ -124,7 +124,7 @@ def main() -> None:
     send_report_email(
         cfg,
         subject=subject,
-        html_body=html_content,
+        html_path=html_path,
         markdown_path=md_path,
         drive_link=drive_link,
     )

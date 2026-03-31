@@ -2,7 +2,7 @@
 uploaders/gmail.py
 
 Sends the weekly report email via SMTP with an app password.
-Attaches the Markdown file and embeds the HTML as the email body.
+Attaches both the HTML and Markdown files; the body is a plain-text summary.
 """
 from __future__ import annotations
 
@@ -21,37 +21,38 @@ log = logging.getLogger(__name__)
 def send_report_email(
     cfg: Config,
     subject: str,
-    html_body: str,
+    html_path: Path,
     markdown_path: Path,
     drive_link: str | None = None,
 ) -> None:
     """
     Send a multipart email:
-      - HTML body (the report)
-      - Markdown file attached
-      - Optional Google Drive link appended to body
+      - Plain-text body with an optional Google Drive link
+      - HTML report attached
+      - Markdown report attached
     """
     msg = MIMEMultipart("mixed")
     msg["From"] = cfg.email_sender
     msg["To"] = cfg.email_recipient
     msg["Subject"] = subject
 
-    # ── HTML body ──────────────────────────────────────────────────────────────
-    body_html = html_body
+    # ── Plain-text body ────────────────────────────────────────────────────────
+    body_lines = ["Relatorios semanais estão anexados. Baixe o relatório HTML e abra no navegador para a melhor experiência de visualização."]
     if drive_link:
-        drive_note = (
-            f'<p style="font-family:sans-serif;color:#8892a4;font-size:13px;margin-top:2rem">'
-            f'📁 <a href="{drive_link}">View full report on Google Drive</a></p>'
-        )
-        body_html = body_html.replace("</body>", drive_note + "\n</body>")
+        body_lines.append(f"\nVeja no Google Drive: {drive_link}")
+    msg.attach(MIMEText("\n".join(body_lines), "plain"))
 
-    msg.attach(MIMEText(body_html, "html"))
+    # ── HTML attachment ────────────────────────────────────────────────────────
+    html_bytes = html_path.read_bytes()
+    html_attachment = MIMEApplication(html_bytes, Name=html_path.name)
+    html_attachment["Content-Disposition"] = f'attachment; filename="{html_path.name}"'
+    msg.attach(html_attachment)
 
     # ── Markdown attachment ────────────────────────────────────────────────────
     md_bytes = markdown_path.read_bytes()
-    attachment = MIMEApplication(md_bytes, Name=markdown_path.name)
-    attachment["Content-Disposition"] = f'attachment; filename="{markdown_path.name}"'
-    msg.attach(attachment)
+    md_attachment = MIMEApplication(md_bytes, Name=markdown_path.name)
+    md_attachment["Content-Disposition"] = f'attachment; filename="{markdown_path.name}"'
+    msg.attach(md_attachment)
 
     # ── Send via SMTP ──────────────────────────────────────────────────────────
     with smtplib.SMTP(cfg.email_smtp_host, cfg.email_smtp_port) as server:
